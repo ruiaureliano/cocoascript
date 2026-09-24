@@ -6,8 +6,12 @@
 //  Original source: CocoaScript, created by August Mueller.
 //
 
+import AppKit
+import Darwin
 import Foundation
 import JavaScriptCore
+
+private typealias COScriptMessageSend = @convention(c) (AnyObject?, Selector, NSString, AnyObject?) -> AnyObject?
 
 public final class COScript: NSObject {
 
@@ -139,6 +143,117 @@ public final class COScript: NSObject {
 		let script = COScript()
 		script.pushAsCurrentCOScript()
 		return script
+	}
+
+	@objc(application:)
+	public class func application(_ app: String) -> Any? {
+		let applicationURL = applicationURL(for: app)
+		guard
+			let url = applicationURL,
+			let bundleIdentifier = Bundle(url: url)?.bundleIdentifier
+		else {
+			return NSNumber(value: false)
+		}
+
+		let isRunning = NSWorkspace.shared.runningApplications.contains {
+			$0.bundleIdentifier == bundleIdentifier
+		}
+
+		if !isRunning {
+			let configuration = NSWorkspace.OpenConfiguration()
+			configuration.activates = false
+			configuration.hides = true
+			NSWorkspace.shared.openApplication(at: url, configuration: configuration)
+		}
+
+		return applicationOnPort("\(bundleIdentifier).JSTalk")
+	}
+
+	private class func applicationURL(for app: String) -> URL? {
+		if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: app) {
+			return url
+		}
+
+		let fileManager = FileManager.default
+		let explicitURL = URL(fileURLWithPath: app)
+		if fileManager.fileExists(atPath: explicitURL.path) {
+			return explicitURL
+		}
+
+		let applicationDirectories = [
+			URL(fileURLWithPath: "/Applications"),
+			URL(fileURLWithPath: "/System/Applications"),
+			fileManager.homeDirectoryForCurrentUser.appendingPathComponent("Applications")
+		]
+
+		for directory in applicationDirectories {
+			guard
+				let applications = try? fileManager.contentsOfDirectory(
+					at: directory,
+					includingPropertiesForKeys: nil,
+					options: .skipsHiddenFiles
+				)
+			else {
+				continue
+			}
+
+			if let application = applications.first(where: { application in
+				guard application.pathExtension == "app" else {
+					return false
+				}
+
+				let bundle = Bundle(url: application)
+				let name = bundle?.object(forInfoDictionaryKey: "CFBundleName") as? String
+				let displayName = bundle?.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String
+				return application.deletingPathExtension().lastPathComponent == app
+					|| name == app
+					|| displayName == app
+			}) {
+				return application
+			}
+		}
+
+		return nil
+	}
+
+	@objc(app:)
+	public class func app(_ app: String) -> Any? {
+		return application(app)
+	}
+
+	@objc(proxyForApp:)
+	public class func proxyForApp(_ app: String) -> Any? {
+		return application(app)
+	}
+
+	private class func applicationOnPort(_ port: String) -> AnyObject? {
+		guard let messageSendPointer = dlsym(dlopen(nil, RTLD_NOW), "objc_msgSend") else {
+			return nil
+		}
+		let messageSend = unsafeBitCast(messageSendPointer, to: COScriptMessageSend.self)
+
+		guard
+			let connectionClass = NSClassFromString("NSConnection") as AnyObject?,
+			let factorySelector = NSSelectorFromString("connectionWithRegisteredName:host:") as Selector?
+		else {
+			return nil
+		}
+
+		for _ in 0..<10 {
+			if let connection = messageSend(
+				connectionClass,
+				factorySelector,
+				port as NSString,
+				nil
+			) {
+				let rootProxySelector = NSSelectorFromString("rootProxy")
+				return messageSend(connection, rootProxySelector, "" as NSString, nil)
+			}
+
+			Thread.sleep(forTimeInterval: 1)
+		}
+
+		return nil
 	}
 
 	public class func currentCOSThreadStack() -> NSMutableArray {
