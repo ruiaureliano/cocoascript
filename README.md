@@ -112,9 +112,6 @@ swift-format format --in-place --recursive \
 	--configuration .swift-format Sources
 ```
 
-The formatting and migration conventions are documented in
-[`FORMAT.md`](FORMAT.md).
-
 ## Migration
 
 CocoaScript is being migrated from Objective-C to Swift in functional groups.
