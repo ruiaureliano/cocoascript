@@ -63,13 +63,12 @@ modernized for Swift 6.
 
 ## Modules
 
-The package exposes one library product with two modules:
+The package exposes one library product:
 
-* `CocoaScript` — the main JavaScript and Cocoa runtime.
-* `CocoaScriptParseKitSwift` — the Swift ParseKit implementation used by the
-  runtime.
+* `CocoaScript` — the public JavaScript and Cocoa runtime.
 
-Most applications only need to import `CocoaScript`.
+ParseKit is an internal SwiftPM target used by the runtime. Its implementation
+lives under `Sources/ParseKit` and is not required by applications directly.
 
 ## Source layout
 
@@ -85,8 +84,24 @@ Sources/
 │   └── Utilities/
 ├── ParseKit/
 │   ├── Core/
+│   │   ├── Assembly/
+│   │   ├── Exceptions/
+│   │   ├── Parser/
+│   │   ├── Reader/
+│   │   └── Sequence/
 │   ├── States/
+│   │   ├── Comments/
+│   │   ├── Numbers/
+│   │   ├── Symbols/
+│   │   ├── Terminals/
+│   │   ├── Tokenizer/
+│   │   └── Words/
 │   └── Tokens/
+│       ├── Characters/
+│       ├── Core/
+│       ├── Literals/
+│       ├── Symbols/
+│       └── Words/
 └── Runtime/
 	├── Fiber/
 	├── Preprocessing/
@@ -114,9 +129,9 @@ swift-format format --in-place --recursive \
 
 ## Migration
 
-CocoaScript is being migrated from Objective-C to Swift in functional groups.
-The migration keeps the original API names, Objective-C selectors, useful
-documentation, and runtime behavior wherever possible.
+CocoaScript has been migrated from Objective-C to Swift in functional groups.
+The Swift implementation keeps the original API names, Objective-C selectors,
+useful documentation, and runtime behavior wherever possible.
 
 The current Swift implementation includes:
 
@@ -126,7 +141,8 @@ The current Swift implementation includes:
 * Objective-C runtime reflection and BridgeSupport models and parsing.
 * CocoaScript scripts, fibers, intervals, targets, listeners, and preprocessing.
 
-Each change is validated with `swift build` before the next migration step.
+The package is validated with `swift build`. The source tree contains no `.h`
+or `.m` files.
 
 ## Acknowledgements
 
@@ -142,8 +158,8 @@ files.
 
 ## Connect
 
-[![X](https://img.shields.io/badge/ruiaureliano-000000.svg?logo=x&logoColor=white)](https://x.com/ruiaureliano)
-[![Mastodon](https://img.shields.io/badge/%40ruiaureliano-6364FF.svg?logo=mastodon&logoColor=white)](https://mastodon.social/@ruiaureliano)
-[![Bluesky](https://img.shields.io/badge/ruiaureliano.com-0285FF.svg?logo=bluesky&logoColor=white)](https://bsky.app/profile/ruiaureliano.com)
-[![GitHub](https://img.shields.io/badge/ruiaureliano-181717.svg?logo=github&logoColor=white)](https://github.com/ruiaureliano)
-[![Email](https://img.shields.io/badge/ruiaureliano%40gmail.com-EA4335.svg?logo=gmail&logoColor=white)](mailto:ruiaureliano@gmail.com)
+[![X](https://img.shields.io/badge/ruiaureliano-000000.svg?logo=x\&logoColor=white)](https://x.com/ruiaureliano)
+[![Mastodon](https://img.shields.io/badge/%40ruiaureliano-6364FF.svg?logo=mastodon\&logoColor=white)](https://mastodon.social/@ruiaureliano)
+[![Bluesky](https://img.shields.io/badge/ruiaureliano.com-0285FF.svg?logo=bluesky\&logoColor=white)](https://bsky.app/profile/ruiaureliano.com)
+[![GitHub](https://img.shields.io/badge/ruiaureliano-181717.svg?logo=github\&logoColor=white)](https://github.com/ruiaureliano)
+[![Email](https://img.shields.io/badge/ruiaureliano%40gmail.com-EA4335.svg?logo=gmail\&logoColor=white)](mailto:ruiaureliano@gmail.com)
